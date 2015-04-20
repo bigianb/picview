@@ -62,7 +62,7 @@ public class CsvWriter
             }
             sb.append(columnName);
         }
-
+        sb.append('\n');
         for (int row = 0; row < numRows; ++row) {
             for (int col = 0; col < numCols; ++col) {
                 List<String> colData = columns.get(col).getStringData();

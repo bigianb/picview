@@ -36,6 +36,8 @@ public class PicasaColumn
     private final String name;
     private final File file;
 
+    private final boolean isDate;
+
     /**
      * Constructor.
      *
@@ -46,6 +48,7 @@ public class PicasaColumn
     {
         this.name = name;
         this.file = file;
+        this.isDate = name.contains("date");
     }
 
     // The data stored in the header
@@ -142,14 +145,38 @@ public class PicasaColumn
                 obj = in.readString();
                 break;
 
+            case 1:
+                obj = in.readInt32();
+                break;
+
+            case 2:
+                // A double can also be interpreted as a date
+                obj = isDate ? in.readDate() : in.readDouble();
+                break;
+
+            case 3:
+                obj = in.readByte() != 0;
+                break;
+
             case 4:
                 obj = in.readInt64();
+                break;
+
+            case 5:
+                obj = in.readInt16();
                 break;
 
             case 6:
                 // Actually a list of strings I think
                 obj = in.readString();
                 break;
+
+            case 7:
+                obj = in.readInt32();
+                break;
+
+            default:
+                logger.error("Unknown column type: " + type + " for column " + name);
         }
         return obj;
     }

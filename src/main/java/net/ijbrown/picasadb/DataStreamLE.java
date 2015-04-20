@@ -19,19 +19,43 @@
 
 package net.ijbrown.picasadb;
 
+import org.apache.log4j.Logger;
+
 import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 
 /**
  * Little Endian data stream.
  */
 public class DataStreamLE extends FilterInputStream
 {
+    private static final Logger logger = Logger.getLogger(DataStreamLE.class);
+
     public DataStreamLE(InputStream in)
     {
         super(in);
+    }
+
+    public byte readByte() throws IOException
+    {
+        int ch = in.read();
+        if (ch < 0){
+            throw new EOFException();
+        }
+        return (byte)ch;
+    }
+
+    public short readInt16() throws IOException
+    {
+        int ch1 = in.read();
+        int ch2 = in.read();
+        if ((ch1 | ch2) < 0) {
+            throw new EOFException();
+        }
+        return (short)((ch2 << 8) | ch1);
     }
 
     public long readUInt32() throws IOException
@@ -40,6 +64,18 @@ public class DataStreamLE extends FilterInputStream
         int ch2 = in.read();
         int ch3 = in.read();
         long ch4 = in.read();
+        if ((ch1 | ch2 | ch3 | ch4) < 0) {
+            throw new EOFException();
+        }
+        return (ch4 << 24) | (ch3 << 16) | (ch2 << 8) | ch1;
+    }
+
+    public int readInt32() throws IOException
+    {
+        int ch1 = in.read();
+        int ch2 = in.read();
+        int ch3 = in.read();
+        int ch4 = in.read();
         if ((ch1 | ch2 | ch3 | ch4) < 0) {
             throw new EOFException();
         }
@@ -64,7 +100,7 @@ public class DataStreamLE extends FilterInputStream
     }
 
 
-    public Object readString() throws IOException
+    public String readString() throws IOException
     {
         StringBuilder sb = new StringBuilder();
         int c;
@@ -73,5 +109,24 @@ public class DataStreamLE extends FilterInputStream
         }
 
         return sb.toString();
+    }
+
+    public double readDouble() throws IOException
+    {
+        long l = readInt64();
+        return Double.longBitsToDouble(l);
+    }
+
+    private static double MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
+
+    public Date readDate() throws IOException
+    {
+        double d = readDouble();    // days since 1900
+        if (d < 0){
+            logger.info("-ve d: " + d);
+        }
+        d -= 25569.0;       // days since Jan 1, 1970
+        long millis = Math.round(d*MILLIS_PER_DAY);
+        return new Date(millis);
     }
 }
